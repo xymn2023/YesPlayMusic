@@ -146,12 +146,6 @@ export function initAmuseServer(background) {
         'window.yesplaymusic.player'
       );
 
-      if (!player.enabled) {
-        console.log('player not enabled');
-        res.send(emptyQuery);
-        return;
-      }
-
       /** @type {PlayingSongData} */
       const currentTrack = player._isPersonalFM
         ? player._personalFMTrack
@@ -196,7 +190,7 @@ export function initAmuseServer(background) {
       /** @type {Query} */
       const response = {
         player: {
-          hasSong: player.enabled,
+          hasSong: true,
           isPaused: !player.playing,
           volumePercent: player.volume * 100,
           seekbarCurrentPosition: progress,
