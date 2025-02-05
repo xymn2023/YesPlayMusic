@@ -26,14 +26,19 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Setup target Node.js to enable Corepack
+        uses: actions/setup-node@v4
+        with:
+          node-version: 16
+
       - name: Enable Corepack
         run: corepack enable
 
-      - name: Install Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 16
-          cache: 'yarn'
+          cache: yarn
 
       - name: Install RPM & Pacman (on Ubuntu)
         if: runner.os == 'Linux'
