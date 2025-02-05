@@ -61,9 +61,12 @@ import express from 'express';
  * @typedef {Object} PlayingSongData
  * @property {Album} album
  * @property {string[]} alias
- * @property {Artist[]} artists
+ * @property {Artist[]} [artists]
+ * @property {Artist[]} [ar]
  * @property {number} id
  * @property {string} name
+ * @property {number} [dt]
+ * @property {number} [duration]
  * @property {string[]} [transNames]
  */
 
@@ -150,21 +153,23 @@ export function initAmuseServer(background) {
       const currentTrack = player._isPersonalFM
         ? player._personalFMTrack
         : player._currentTrack;
-      console.log(currentTrack);
 
-      const trackInfoKeys = Object.keys(currentTrack);
-      if (
-        (trackInfoKeys.length == 1 && trackInfoKeys[0] === 'id') ||
-        trackInfoKeys.length === 0
-      ) {
-        console.log('no track playing');
+      if (Object.keys(currentTrack) <= 1) {
         res.send(emptyQuery);
         return;
       }
 
-      const { progress, currentTrackDuration } = player;
+      const { _progress: progressRaw } = player;
+      const progress = Math.floor(progressRaw);
 
-      const author = currentTrack.artists
+      const durationRaw = ~~(
+        (currentTrack.dt ? currentTrack.dt : currentTrack.duration) / 1000
+      );
+      const duration = durationRaw > 1 ? durationRaw - 1 : durationRaw;
+
+      const author = (
+        currentTrack.artists ? currentTrack.artists : currentTrack.ar
+      )
         .map(v =>
           formatName(
             v.name,
@@ -191,11 +196,11 @@ export function initAmuseServer(background) {
       const response = {
         player: {
           hasSong: true,
-          isPaused: !player.playing,
-          volumePercent: player.volume * 100,
+          isPaused: !player._playing,
+          volumePercent: player._volume * 100,
           seekbarCurrentPosition: progress,
           seekbarCurrentPositionHuman: toDurationHuman(progress),
-          statePercent: progress / currentTrackDuration,
+          statePercent: progressRaw / durationRaw,
           likeStatus: player.isCurrentTrackLiked,
           repeatType: transformRepeatMode(player.repeatMode),
         },
@@ -204,8 +209,8 @@ export function initAmuseServer(background) {
           title,
           album,
           cover: currentTrack.album.picUrl,
-          duration: currentTrackDuration,
-          durationHuman: toDurationHuman(currentTrackDuration),
+          duration,
+          durationHuman: toDurationHuman(duration),
           url: `https://music.163.com/song?id=${currentTrack.id}`,
           id: `${currentTrack.id}`,
           isVideo: false,
