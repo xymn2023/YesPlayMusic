@@ -82,7 +82,7 @@ const closeOnLinux = (e, win, store) => {
   }
 };
 
-class Background {
+export class Background {
   constructor() {
     this.window = null;
     this.ypmTrayImpl = null;
@@ -126,8 +126,6 @@ class Background {
         'HardwareMediaKeyHandling,MediaSessionService'
       );
     }
-
-    initAmuseServer();
   }
 
   async initDevtools() {
@@ -171,6 +169,8 @@ class Background {
         });
     });
     this.expressApp = expressApp.listen(27232, '127.0.0.1');
+
+    initAmuseServer(this);
   }
 
   createWindow() {

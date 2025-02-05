@@ -93,74 +93,121 @@ function toDurationHuman(duration) {
  * @returns {RepeatType}
  */
 function transformRepeatMode(mode) {
-  return { on: 'ONE', all: 'ALL' }[mode] ?? 'NONE';
+  const transformed = { on: 'ONE', all: 'ALL' }[mode];
+  return transformed ? transformed : 'NONE';
 }
 
-export function initAmuseServer() {
+const emptyQuery = {
+  player: {
+    hasSong: false,
+    isPaused: true,
+    volumePercent: 0,
+    seekbarCurrentPosition: 0,
+    seekbarCurrentPositionHuman: '0:00',
+    statePercent: 0,
+    likeStatus: 'INDIFFERENT',
+    repeatType: 'NONE',
+  },
+  track: {
+    author: '',
+    title: '',
+    album: '',
+    cover: '',
+    duration: 0,
+    durationHuman: '0:00',
+    url: '',
+    id: '',
+    isVideo: false,
+    isAdvertisement: false,
+    inLibrary: false,
+  },
+};
+
+/**
+ * @param {import('@/background.js').Background} background
+ */
+export function initAmuseServer(background) {
   const expressApp = express();
 
   expressApp.get('/query', async (req, res) => {
-    /** @type {Player} */
-    const player = await this.window.webContents.executeJavaScript(
-      'window.yesplaymusic.player'
-    );
-    /** @type {PlayingSongData} */
-    const currentTrack = player._isPersonalFM
-      ? player._personalFMTrack
-      : player._currentTrack;
+    (async () => {
+      /** @type {Player} */
+      const player = await background.window.webContents.executeJavaScript(
+        'window.yesplaymusic.player'
+      );
 
-    const { progress, currentTrackDuration } = player;
+      if (!player.enabled) {
+        res.send(emptyQuery);
+        return;
+      }
 
-    const author = currentTrack.artists
-      .map(v =>
-        formatName(
-          v.name,
-          ...(v.tns ?? []),
-          ...(v.trans ? [v.trans] : []),
-          ...v.alias
+      /** @type {PlayingSongData} */
+      const currentTrack = player._isPersonalFM
+        ? player._personalFMTrack
+        : player._currentTrack;
+
+      const trackInfoKeys = Object.keys(currentTrack);
+      if (trackInfoKeys.length <= 1 && trackInfoKeys[0] === 'id') {
+        res.send(emptyQuery);
+        return;
+      }
+
+      const { progress, currentTrackDuration } = player;
+
+      const author = currentTrack.artists
+        .map(v =>
+          formatName(
+            v.name,
+            ...(v.tns ? v.tn : []),
+            ...(v.trans ? [v.trans] : []),
+            ...v.alias
+          )
         )
-      )
-      .join(' / ');
-    const album = formatName(
-      currentTrack.album.name,
-      ...(currentTrack.album.transNames ?? []),
-      ...(currentTrack.album.transName ?? []),
-      ...currentTrack.album.alias
-    );
+        .join(' / ');
+      const album = formatName(
+        currentTrack.album.name,
+        ...(currentTrack.album.transNames ? currentTrack.album.transNames : []),
+        ...(currentTrack.album.transName ? currentTrack.album.transName : []),
+        ...currentTrack.album.alias
+      );
 
-    const title = formatName(
-      currentTrack.name,
-      ...(currentTrack.transNames ?? []),
-      ...currentTrack.alias
-    );
+      const title = formatName(
+        currentTrack.name,
+        ...(currentTrack.transNames ? currentTrack.transNames : []),
+        ...currentTrack.alias
+      );
 
-    /** @type {Query} */
-    const response = {
-      player: {
-        hasSong: player.enabled,
-        isPaused: !player.playing,
-        volumePercent: player.volume * 100,
-        seekbarCurrentPosition: progress,
-        seekbarCurrentPositionHuman: toDurationHuman(progress),
-        statePercent: progress / currentTrackDuration,
-        likeStatus: player.isCurrentTrackLiked,
-        repeatType: transformRepeatMode(player.repeatMode),
-      },
-      track: {
-        author,
-        title,
-        album,
-        cover: currentTrack.album.picUrl,
-        duration: currentTrackDuration,
-        durationHuman: toDurationHuman(currentTrackDuration),
-        url: `https://music.163.com/song?id=${currentTrack.id}`,
-        id: `${currentTrack.id}`,
-        isVideo: false,
-        isAdvertisement: false,
-        inLibrary: false,
-      },
-    };
-    res.send(response);
+      /** @type {Query} */
+      const response = {
+        player: {
+          hasSong: player.enabled,
+          isPaused: !player.playing,
+          volumePercent: player.volume * 100,
+          seekbarCurrentPosition: progress,
+          seekbarCurrentPositionHuman: toDurationHuman(progress),
+          statePercent: progress / currentTrackDuration,
+          likeStatus: player.isCurrentTrackLiked,
+          repeatType: transformRepeatMode(player.repeatMode),
+        },
+        track: {
+          author,
+          title,
+          album,
+          cover: currentTrack.album.picUrl,
+          duration: currentTrackDuration,
+          durationHuman: toDurationHuman(currentTrackDuration),
+          url: `https://music.163.com/song?id=${currentTrack.id}`,
+          id: `${currentTrack.id}`,
+          isVideo: false,
+          isAdvertisement: false,
+          inLibrary: false,
+        },
+      };
+      res.send(response);
+    })().catch(e => {
+      console.error(e);
+      res.status(500).send({ error: e.message });
+    });
   });
 
   const port = 9863;
