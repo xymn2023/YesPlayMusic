@@ -26,13 +26,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Enable Corepack
-        run: corepack enable
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 16
           cache: yarn
 
       - name: Install RPM & Pacman (on Ubuntu)
