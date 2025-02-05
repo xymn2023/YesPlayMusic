@@ -129,6 +129,16 @@ const emptyQuery = {
 export function initAmuseServer(background) {
   const expressApp = express();
 
+  // disable cors
+  expressApp.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept'
+    );
+    next();
+  });
+
   expressApp.get('/query', async (req, res) => {
     (async () => {
       /** @type {Player} */
@@ -137,6 +147,7 @@ export function initAmuseServer(background) {
       );
 
       if (!player.enabled) {
+        console.log('player not enabled');
         res.send(emptyQuery);
         return;
       }
@@ -145,9 +156,14 @@ export function initAmuseServer(background) {
       const currentTrack = player._isPersonalFM
         ? player._personalFMTrack
         : player._currentTrack;
+      console.log(currentTrack);
 
       const trackInfoKeys = Object.keys(currentTrack);
-      if (trackInfoKeys.length <= 1 && trackInfoKeys[0] === 'id') {
+      if (
+        (trackInfoKeys.length == 1 && trackInfoKeys[0] === 'id') ||
+        trackInfoKeys.length === 0
+      ) {
+        console.log('no track playing');
         res.send(emptyQuery);
         return;
       }
