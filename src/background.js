@@ -33,6 +33,7 @@ import expressProxy from 'express-http-proxy';
 import Store from 'electron-store';
 import { createMpris, createDbus } from '@/electron/mpris';
 import { spawn } from 'child_process';
+import { initAmuseServer } from './electron/amuseServer';
 const clc = require('cli-color');
 const log = text => {
   console.log(`${clc.blueBright('[background.js]')} ${text}`);
@@ -125,6 +126,8 @@ class Background {
         'HardwareMediaKeyHandling,MediaSessionService'
       );
     }
+
+    initAmuseServer();
   }
 
   async initDevtools() {
