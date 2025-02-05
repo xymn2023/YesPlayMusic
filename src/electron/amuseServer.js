@@ -222,7 +222,7 @@ export function initAmuseServer(background) {
           author,
           title,
           album,
-          cover: currentTrack.album.picUrl,
+          cover: alObj.picUrl,
           duration,
           durationHuman: toDurationHuman(duration),
           url: `https://music.163.com/song?id=${currentTrack.id}`,
