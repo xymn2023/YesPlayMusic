@@ -40,12 +40,12 @@ import express from 'express';
 
 /**
  * @typedef {Object} Album
- * @property {string[]} alias
+ * @property {string[]} [alias]
  * @property {number} id
  * @property {string} name
  * @property {string} picUrl
- * @property {string[]} [transNames]
  * @property {string[]} [transName]
+ * @property {string[]} [tns]
  */
 
 /**
@@ -59,14 +59,17 @@ import express from 'express';
 
 /**
  * @typedef {Object} PlayingSongData
- * @property {Album} album
- * @property {string[]} alias
+ * @property {Album} [al]
+ * @property {Album} [album]
+ * @property {string[]} [alia]
+ * @property {string[]} [alias]
  * @property {Artist[]} [artists]
  * @property {Artist[]} [ar]
  * @property {number} id
  * @property {string} name
  * @property {number} [dt]
  * @property {number} [duration]
+ * @property {string[]} [tns]
  * @property {string[]} [transNames]
  */
 
@@ -167,29 +170,40 @@ export function initAmuseServer(background) {
       );
       const duration = durationRaw > 1 ? durationRaw - 1 : durationRaw;
 
-      const author = (
-        currentTrack.artists ? currentTrack.artists : currentTrack.ar
-      )
+      const author = (currentTrack.ar ? currentTrack.ar : currentTrack.artists)
         .map(v =>
           formatName(
             v.name,
-            ...(v.tns ? v.tn : []),
-            ...(v.trans ? [v.trans] : []),
+            ...(v.tns ? v.tns : v.trans ? [v.trans] : []),
             ...v.alias
           )
         )
         .join(' / ');
+      const alObj = currentTrack.al ? currentTrack.al : currentTrack.album;
       const album = formatName(
-        currentTrack.album.name,
-        ...(currentTrack.album.transNames ? currentTrack.album.transNames : []),
-        ...(currentTrack.album.transName ? currentTrack.album.transName : []),
-        ...currentTrack.album.alias
+        alObj.name,
+        ...(alObj.tns
+          ? alObj.tns
+          : alObj.transName === null
+          ? []
+          : Array.isArray(alObj.transName)
+          ? alObj.transName
+          : [alObj.transName]),
+        ...(alObj.alias ? alObj.alias : [])
       );
 
       const title = formatName(
         currentTrack.name,
-        ...(currentTrack.transNames ? currentTrack.transNames : []),
-        ...currentTrack.alias
+        ...(currentTrack.tns
+          ? currentTrack.tns
+          : currentTrack.transNames
+          ? currentTrack.transNames
+          : []),
+        ...(currentTrack.alia
+          ? currentTrack.alia
+          : currentTrack.alias
+          ? currentTrack.alias
+          : [])
       );
 
       /** @type {Query} */
