@@ -186,7 +186,7 @@ export function initAmuseServer(background) {
           ? alObj.tns
           : alObj.transName === null
           ? []
-          : Array.isArray(alObj.transName)
+          : Array.isArray(alObj.transName) // 未知 懒得测试 保险
           ? alObj.transName
           : [alObj.transName]),
         ...(alObj.alias ? alObj.alias : [])
