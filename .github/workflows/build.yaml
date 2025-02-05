@@ -26,7 +26,10 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 16
